@@ -25,6 +25,7 @@ class NewsArticle:
     published_at: datetime
     categories: List[str]
     sentiment_score: Optional[float] = None  # To be filled by sentiment engine
+    tags: Optional[List[str]] = None 
     
     def to_dict(self) -> Dict:
         """Convert to dictionary with serialized datetime"""

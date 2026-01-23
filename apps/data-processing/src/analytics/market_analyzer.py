@@ -29,7 +29,7 @@ class MarketAnalyzer:
     Analyzes market health using weighted average of sentiment and volume changes.
     
     Formula:
-        Market Health Score = (Sentiment × 0.6) + (Normalized_Volume_Change × 0.4)
+        Market Health Score = (Sentiment × 0.7) + (Normalized_Volume_Change × 0.3)
     
     Where:
         - Sentiment: Direct sentiment score (-1.0 to 1.0)
@@ -42,8 +42,8 @@ class MarketAnalyzer:
     """
     
     # Weights for the weighted average
-    SENTIMENT_WEIGHT = 0.6
-    VOLUME_WEIGHT = 0.4
+    SENTIMENT_WEIGHT = 0.7
+    VOLUME_WEIGHT = 0.3
     
     # Thresholds for trend classification
     BULLISH_THRESHOLD = 0.2
