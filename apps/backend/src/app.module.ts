@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestExceptionController } from './test-exception.controller';
+import { NewsModule } from './news/news.module';
 
 @Module({
   controllers: [AppController, TestExceptionController],
@@ -29,6 +30,7 @@ import { TestExceptionController } from './test-exception.controller';
       }),
       inject: [ConfigService],
     }),
+    NewsModule,
   ],
 })
 export class AppModule {}
