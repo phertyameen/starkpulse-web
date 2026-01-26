@@ -39,7 +39,7 @@ import { TestController } from './test/test.controller';
     AuthModule,
     UsersModule,
   ],
-  controllers: [AppController, TestController],
+  controllers: [AppController, TestController, TestExceptionController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {

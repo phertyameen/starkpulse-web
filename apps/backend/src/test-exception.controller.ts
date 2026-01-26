@@ -1,5 +1,17 @@
-import { Controller, Get, HttpException, HttpStatus, Post, Body, Logger } from '@nestjs/common';
-import { SentimentService, SentimentResponse, HealthResponse } from './sentiment/sentiment.service';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Post,
+  Body,
+  Logger,
+} from '@nestjs/common';
+import {
+  SentimentService,
+  SentimentResponse,
+  HealthResponse,
+} from './sentiment/sentiment.service';
 
 // DTO for sentiment analysis
 interface AnalyzeDto {
@@ -76,7 +88,9 @@ export class TestExceptionController {
   // ===== New Sentiment Analysis Endpoints =====
 
   @Post('sentiment/analyze')
-  async analyzeSentiment(@Body() analyzeDto: AnalyzeDto): Promise<SentimentResponse> {
+  async analyzeSentiment(
+    @Body() analyzeDto: AnalyzeDto,
+  ): Promise<SentimentResponse> {
     if (!this.sentimentService) {
       throw new HttpException(
         'Sentiment service is not available',
@@ -84,7 +98,9 @@ export class TestExceptionController {
       );
     }
 
-    this.logger.log(`Analyzing sentiment for text: ${analyzeDto.text.substring(0, 50)}...`);
+    this.logger.log(
+      `Analyzing sentiment for text: ${analyzeDto.text.substring(0, 50)}...`,
+    );
     return this.sentimentService.analyzeSentiment(analyzeDto.text);
   }
 
@@ -117,8 +133,14 @@ export class TestExceptionController {
     }
 
     const testCases = [
-      { text: 'I love this product! It is absolutely amazing!', expected: 'positive' },
-      { text: 'This is terrible and awful, worst experience ever.', expected: 'negative' },
+      {
+        text: 'I love this product! It is absolutely amazing!',
+        expected: 'positive',
+      },
+      {
+        text: 'This is terrible and awful, worst experience ever.',
+        expected: 'negative',
+      },
       { text: 'The weather is normal today.', expected: 'neutral' },
     ];
 
@@ -126,17 +148,28 @@ export class TestExceptionController {
 
     for (const testCase of testCases) {
       try {
-        const result = await this.sentimentService.analyzeSentiment(testCase.text);
-        
-        const actual = result.sentiment > 0.05 ? 'positive' : 
-                      result.sentiment < -0.05 ? 'negative' : 'neutral';
-        
-        const match = (result.sentiment > 0.05 && testCase.expected === 'positive') ||
-                     (result.sentiment < -0.05 && testCase.expected === 'negative') ||
-                     (result.sentiment >= -0.05 && result.sentiment <= 0.05 && testCase.expected === 'neutral');
-        
+        const result = await this.sentimentService.analyzeSentiment(
+          testCase.text,
+        );
+
+        const actual =
+          result.sentiment > 0.05
+            ? 'positive'
+            : result.sentiment < -0.05
+              ? 'negative'
+              : 'neutral';
+
+        const match =
+          (result.sentiment > 0.05 && testCase.expected === 'positive') ||
+          (result.sentiment < -0.05 && testCase.expected === 'negative') ||
+          (result.sentiment >= -0.05 &&
+            result.sentiment <= 0.05 &&
+            testCase.expected === 'neutral');
+
         results.push({
-          text: testCase.text.substring(0, 50) + (testCase.text.length > 50 ? '...' : ''),
+          text:
+            testCase.text.substring(0, 50) +
+            (testCase.text.length > 50 ? '...' : ''),
           sentiment: result.sentiment,
           expected: testCase.expected,
           status: 'success',
@@ -144,9 +177,12 @@ export class TestExceptionController {
           match,
         });
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         results.push({
-          text: testCase.text.substring(0, 50) + (testCase.text.length > 50 ? '...' : ''),
+          text:
+            testCase.text.substring(0, 50) +
+            (testCase.text.length > 50 ? '...' : ''),
           expected: testCase.expected,
           status: 'failed',
           error: errorMessage,
@@ -154,8 +190,8 @@ export class TestExceptionController {
       }
     }
 
-    const successCount = results.filter(r => r.status === 'success').length;
-    const matchCount = results.filter(r => r.match).length;
+    const successCount = results.filter((r) => r.status === 'success').length;
+    const matchCount = results.filter((r) => r.match).length;
 
     return {
       timestamp: new Date().toISOString(),
@@ -188,7 +224,10 @@ export class TestExceptionController {
     const exceptionEndpoints = [
       { name: 'http-exception', url: 'test-exception/http-exception' },
       { name: 'general-error', url: 'test-exception/general-error' },
-      { name: 'internal-server-error', url: 'test-exception/internal-server-error' },
+      {
+        name: 'internal-server-error',
+        url: 'test-exception/internal-server-error',
+      },
     ];
 
     for (const endpoint of exceptionEndpoints) {
@@ -206,7 +245,8 @@ export class TestExceptionController {
         results.sentimentTests = sentimentTest;
         results.summary.sentimentServiceAvailable = true;
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         results.sentimentTests = {
           timestamp: new Date().toISOString(),
           status: 'failed',
@@ -214,12 +254,14 @@ export class TestExceptionController {
           totalTests: 0,
           successful: 0,
           matches: 0,
-          testCases: [{
-            text: 'Sentiment service test',
-            expected: 'n/a',
-            status: 'error',
-            error: errorMessage,
-          }],
+          testCases: [
+            {
+              text: 'Sentiment service test',
+              expected: 'n/a',
+              status: 'error',
+              error: errorMessage,
+            },
+          ],
           pythonApiUrl: process.env.PYTHON_API_URL || 'http://localhost:8000',
           serviceAvailable: false,
         };
@@ -227,7 +269,9 @@ export class TestExceptionController {
     }
 
     results.summary.totalExceptionTests = exceptionEndpoints.length;
-    results.summary.overallStatus = this.sentimentService ? 'full_service' : 'basic_service';
+    results.summary.overallStatus = this.sentimentService
+      ? 'full_service'
+      : 'basic_service';
 
     return results;
   }

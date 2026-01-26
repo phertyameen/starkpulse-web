@@ -22,15 +22,15 @@ const createMockAxiosError = (options: {
     status?: number;
     statusText?: string;
     headers?: Record<string, string>;
-    config?: any;
+    config?: unknown;
   };
   code?: string;
   message?: string;
   isAxiosError?: boolean;
-  config?: any;
+  config?: unknown;
 }): AxiosError => {
   const error = new Error(options.message) as AxiosError;
-  
+
   // Set all required AxiosError properties
   Object.assign(error, {
     isAxiosError: options.isAxiosError ?? true,
@@ -47,7 +47,7 @@ const createMockAxiosError = (options: {
       status: options.response?.status,
     }),
   });
-  
+
   return error;
 };
 
@@ -68,13 +68,15 @@ describe('SentimentService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-  
+
     // Ensure default URL is always defined before service is constructed
-    mockConfigService.get.mockImplementation((key: string, defaultValue?: string) => {
-      if (key === 'PYTHON_API_URL') return 'http://localhost:8000';
-      return defaultValue;
-    });
-  
+    mockConfigService.get.mockImplementation(
+      (key: string, defaultValue?: string) => {
+        if (key === 'PYTHON_API_URL') return 'http://localhost:8000';
+        return defaultValue;
+      },
+    );
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SentimentService,
@@ -82,9 +84,9 @@ describe('SentimentService', () => {
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
-  
+
     service = module.get<SentimentService>(SentimentService);
-  
+
     httpService = module.get<HttpService>(HttpService);
     configService = module.get<ConfigService>(ConfigService);
   });
@@ -96,20 +98,14 @@ describe('SentimentService', () => {
   describe('constructor', () => {
     it('should initialize with default Python API URL', () => {
       mockConfigService.get.mockReturnValue('http://localhost:8000');
-      const newService = new SentimentService(
-        httpService as any,
-        configService as any,
-      );
+      const newService = new SentimentService(httpService, configService);
       expect(newService).toBeDefined();
     });
 
     it('should initialize with custom Python API URL from config', () => {
       const customUrl = 'http://python-api:8080';
       mockConfigService.get.mockReturnValue(customUrl);
-      const newService = new SentimentService(
-        httpService as any,
-        configService as any,
-      );
+      const newService = new SentimentService(httpService, configService);
       expect(newService).toBeDefined();
     });
   });
@@ -140,22 +136,30 @@ describe('SentimentService', () => {
         {
           timeout: 10000,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       );
     });
 
     it('should throw HttpException when text is empty', async () => {
       const text = '';
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Text cannot be empty');
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Text cannot be empty',
+      );
     });
 
     it('should throw HttpException when text is only whitespace', async () => {
       const text = '   ';
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Text cannot be empty');
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Text cannot be empty',
+      );
     });
 
     it('should handle Python API error response', async () => {
@@ -171,11 +175,15 @@ describe('SentimentService', () => {
         message: 'Request failed with status code 400',
         isAxiosError: true,
       });
-      
+
       mockHttpService.post.mockReturnValue(throwError(() => mockError));
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Python API error: Invalid text format');
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Python API error: Invalid text format',
+      );
     });
 
     it('should handle connection refused error', async () => {
@@ -185,11 +193,15 @@ describe('SentimentService', () => {
         message: 'Connection refused',
         isAxiosError: true,
       });
-      
+
       mockHttpService.post.mockReturnValue(throwError(() => mockError));
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Python sentiment service is unavailable');
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Python sentiment service is unavailable',
+      );
     });
 
     it('should handle network timeout error', async () => {
@@ -199,13 +211,16 @@ describe('SentimentService', () => {
         message: 'Request timeout',
         isAxiosError: true,
       });
-      
+
       mockHttpService.post.mockReturnValue(throwError(() => mockError));
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
       // await expect(service.analyzeSentiment(text)).rejects.toThrow('Failed to analyze sentiment: Request timeout');
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Python sentiment service is unavailable');
-
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Python sentiment service is unavailable',
+      );
     });
 
     it('should handle generic error', async () => {
@@ -213,8 +228,12 @@ describe('SentimentService', () => {
       const mockError = new Error('Some unexpected error');
       mockHttpService.post.mockReturnValue(throwError(() => mockError));
 
-      await expect(service.analyzeSentiment(text)).rejects.toThrow(HttpException);
-      await expect(service.analyzeSentiment(text)).rejects.toThrow('Failed to analyze sentiment: Some unexpected error');
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.analyzeSentiment(text)).rejects.toThrow(
+        'Failed to analyze sentiment: Some unexpected error',
+      );
     });
 
     it('should handle long text by logging substring', async () => {
@@ -252,7 +271,7 @@ describe('SentimentService', () => {
       expect(result).toEqual(mockHealthResponse.data);
       expect(mockHttpService.get).toHaveBeenCalledWith(
         'http://localhost:8000/health',
-        { timeout: 5000 }
+        { timeout: 5000 },
       );
     });
 
@@ -261,11 +280,13 @@ describe('SentimentService', () => {
         message: 'Connection failed',
         isAxiosError: true,
       });
-      
+
       mockHttpService.get.mockReturnValue(throwError(() => mockError));
 
       await expect(service.checkHealth()).rejects.toThrow(HttpException);
-      await expect(service.checkHealth()).rejects.toThrow('Python sentiment service is unhealthy');
+      await expect(service.checkHealth()).rejects.toThrow(
+        'Python sentiment service is unhealthy',
+      );
     });
 
     it('should handle timeout during health check', async () => {
@@ -274,11 +295,13 @@ describe('SentimentService', () => {
         message: 'Request timeout',
         isAxiosError: true,
       });
-      
+
       mockHttpService.get.mockReturnValue(throwError(() => mockError));
 
       await expect(service.checkHealth()).rejects.toThrow(HttpException);
-      await expect(service.checkHealth()).rejects.toThrow('Python sentiment service is unhealthy');
+      await expect(service.checkHealth()).rejects.toThrow(
+        'Python sentiment service is unhealthy',
+      );
     });
   });
 
@@ -336,4 +359,3 @@ describe('SentimentService', () => {
     });
   });
 });
-

@@ -1,24 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Server } from 'http';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { SentimentService } from '../src/sentiment/sentiment.service';
-import { SentimentResponse } from '../src/sentiment/sentiment.service';
-import { HealthResponse } from '../src/sentiment/sentiment.service';
+import {
+  SentimentResponse,
+  HealthResponse,
+} from '../src/sentiment/sentiment.service';
 
-// Mock interfaces for testing
-interface MockedSentimentResponse extends SentimentResponse {
-  sentiment: number;
-}
-
-interface MockedHealthResponse extends HealthResponse {
-  status: string;
-  timestamp: string;
-  service: string;
+interface ErrorResponse {
+  message: string | string[];
+  error?: string;
+  statusCode: number;
 }
 
 describe('SentimentController (e2e)', () => {
   let app: INestApplication;
+  let server: Server;
   let sentimentService: SentimentService;
 
   beforeAll(async () => {
@@ -29,7 +28,8 @@ describe('SentimentController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    sentimentService = moduleFixture.get<SentimentService>(SentimentService);
+    server = app.getHttpServer() as unknown as Server;
+    sentimentService = moduleFixture.get(SentimentService);
   });
 
   afterAll(async () => {
@@ -37,38 +37,42 @@ describe('SentimentController (e2e)', () => {
   });
 
   describe('POST /sentiment/analyze', () => {
-    it('should analyze sentiment successfully', () => {
-      // Mock the service method with proper typing
-      const mockResponse: MockedSentimentResponse = {
-        sentiment: 0.85,
-      };
-      
-      jest.spyOn(sentimentService, 'analyzeSentiment').mockResolvedValue(mockResponse);
+    it('should analyze sentiment successfully', async () => {
+      const mockResponse: SentimentResponse = { sentiment: 0.85 };
 
-      return request(app.getHttpServer())
+      jest
+        .spyOn(sentimentService, 'analyzeSentiment')
+        .mockResolvedValue(mockResponse);
+
+      const res = await request(server)
         .post('/sentiment/analyze')
         .send({ text: 'This is amazing!' })
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('sentiment');
-          expect(typeof res.body.sentiment).toBe('number');
-          expect(res.body.sentiment).toBeGreaterThanOrEqual(-1);
-          expect(res.body.sentiment).toBeLessThanOrEqual(1);
-        });
+        .expect(201);
+
+      const body = res.body as SentimentResponse;
+
+      expect(body.sentiment).toBeGreaterThanOrEqual(-1);
+      expect(body.sentiment).toBeLessThanOrEqual(1);
     });
 
-    it('should return 400 for empty text', () => {
-      return request(app.getHttpServer())
+    it('should return 400 for empty text', async () => {
+      const res = await request(server)
         .post('/sentiment/analyze')
         .send({ text: '' })
-        .expect(400)
-        .expect((res) => {
-          expect(res.body.message).toContain('Text cannot be empty');
-        });
+        .expect(400);
+
+      const body = res.body as ErrorResponse;
+
+      const message =
+        typeof body.message === 'string'
+          ? body.message
+          : body.message.join(' ');
+
+      expect(message).toContain('Text cannot be empty');
     });
 
-    it('should return 400 for whitespace-only text', () => {
-      return request(app.getHttpServer())
+    it('should return 400 for whitespace-only text', async () => {
+      await request(server)
         .post('/sentiment/analyze')
         .send({ text: '   ' })
         .expect(400);
@@ -76,24 +80,24 @@ describe('SentimentController (e2e)', () => {
   });
 
   describe('GET /sentiment/health', () => {
-    it('should return health status', () => {
-      // Mock the service method with proper typing
-      const mockResponse: MockedHealthResponse = {
+    it('should return health status', async () => {
+      const mockResponse: HealthResponse = {
         status: 'healthy',
         timestamp: '2024-01-01T12:00:00Z',
         service: 'sentiment-analysis',
       };
-      
-      jest.spyOn(sentimentService, 'checkHealth').mockResolvedValue(mockResponse);
 
-      return request(app.getHttpServer())
-        .get('/sentiment/health')
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('status', 'healthy');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('service', 'sentiment-analysis');
-        });
+      jest
+        .spyOn(sentimentService, 'checkHealth')
+        .mockResolvedValue(mockResponse);
+
+      const res = await request(server).get('/sentiment/health').expect(200);
+
+      const body = res.body as HealthResponse;
+
+      expect(body.status).toBe('healthy');
+      expect(body.service).toBe('sentiment-analysis');
     });
   });
 });
+

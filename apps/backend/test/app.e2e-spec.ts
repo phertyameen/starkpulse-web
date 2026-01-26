@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
+// import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { GlobalExceptionFilter } from '../src/filters/global-exception.filter';
-import type { Server } from 'http';
+// import type { Server } from 'http';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -59,5 +59,4 @@ describe('AppController (e2e)', () => {
   //       expect(body.path).toBe('/nonexistent');
   //     });
   // });
- 
 });
