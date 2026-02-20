@@ -90,10 +90,10 @@ impl ContributorRegistryContract {
                 Some(new_delta) => new_delta as u64,
                 None => 0,
             };
-            match contributor.reputation_score.checked_sub(new_delta) {
-                Some(score) => score as u64,
-                None => 0,
-            }
+            contributor
+                .reputation_score
+                .checked_sub(new_delta)
+                .unwrap_or_default()
         };
         contributor.reputation_score = new_score;
         env.storage()
@@ -106,7 +106,7 @@ impl ContributorRegistryContract {
     /// Get contributor reputation
     pub fn get_reputation(env: Env, contributor: Address) -> Result<u64, ContributorError> {
         let contributor_data: ContributorData = Self::get_contributor(env, contributor)?;
-        return Ok(contributor_data.reputation_score);
+        Ok(contributor_data.reputation_score)
     }
 
     /// Get contributor profile data
