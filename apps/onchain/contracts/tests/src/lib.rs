@@ -6,48 +6,55 @@ use soroban_sdk::{
     Address, Env, String, Symbol,
 };
 
-// 1. Bytes only - No contractimport! to avoid DataKey collisions
-mod wasm_files {
-    pub const TOKEN: &[u8] = include_bytes!("../../../target/wasm32v1-none/release/lumen_token.wasm");
-    pub const REGISTRY: &[u8] = include_bytes!("../../../target/wasm32v1-none/release/contributor_registry.wasm");
-    pub const VAULT: &[u8] = include_bytes!("../../../target/wasm32v1-none/release/crowdfund_vault.wasm");
-}
-
-// 2. Import Clients from the actual contract crates
-use lumen_token::{LumenTokenClient as TokenClient};
-use contributor_registry::{ContributorRegistryContractClient as RegistryClient};
-use crowdfund_vault::{CrowdfundVaultContractClient as VaultClient};
+// 1. IMPORT SOURCE CONTRACTS
+// We import the actual structs and the auto-generated Clients
+use lumen_token::{LumenToken, LumenTokenClient as TokenClient};
+use contributor_registry::{ContributorRegistryContract, ContributorRegistryContractClient as RegistryClient};
+use crowdfund_vault::{CrowdfundVaultContract, CrowdfundVaultContractClient as VaultClient};
 
 #[test]
 fn test_lumenpulse_protocol_e2e() {
     let env = Env::default();
+    
+    // Automatically handles authorizations for all contract calls in the test
     env.mock_all_auths();
 
-    // Setup Identities
+    // 2. SETUP IDENTITIES
     let admin = Address::generate(&env);
     let contributor = Address::generate(&env);
     let project_owner = Address::generate(&env);
 
-    // 3. Registering using the non-deprecated .register method
-    // Note: Soroban now uses .register(WASM_BYTES, ()) for WASM registration
-    let token_id = env.register(wasm_files::TOKEN, ());
-    let reg_id = env.register(wasm_files::REGISTRY, ());
-    let vault_id = env.register(wasm_files::VAULT, ());
+    // 3. MODERN REGISTRATION (Resolved Deprecation & CI Errors)
+    // We register the contract types directly. This compiles them from source 
+    // and removes the need for files in the gitignored target/ folder.
+    let token_id = env.register(LumenToken, ());
+    let reg_id = env.register(ContributorRegistryContract, ());
+    let vault_id = env.register(CrowdfundVaultContract, ());
 
-    // 4. Create Clients
+    // 4. INITIALIZE CLIENTS
     let token_client = TokenClient::new(&env, &token_id);
     let reg_client = RegistryClient::new(&env, &reg_id);
     let vault_client = VaultClient::new(&env, &vault_id);
 
-    // 5. Initialize Protocol
-    token_client.initialize(&admin, &7u32, &String::from_str(&env, "Lumen"), &String::from_str(&env, "LUM"));
+    // 5. PROTOCOL INITIALIZATION
+    // Aligning with your specific method signatures
+    token_client.initialize(
+        &admin, 
+        &7u32, 
+        &String::from_str(&env, "Lumen"), 
+        &String::from_str(&env, "LUM")
+    );
     reg_client.initialize(&admin);
     vault_client.initialize(&admin);
 
-    // 6. Full Flow: Register -> Mint -> Project -> Deposit
+    // 6. EXECUTION FLOW
+    // Step A: Register the contributor in the registry
     reg_client.register_contributor(&contributor, &String::from_str(&env, "cedarich"));
+    
+    // Step B: Mint tokens to the contributor
     token_client.mint(&contributor, &10000i128);
 
+    // Step C: Create a project in the vault
     let project_id = vault_client.create_project(
         &project_owner, 
         &Symbol::new(&env, "DevTools"), 
@@ -55,17 +62,25 @@ fn test_lumenpulse_protocol_e2e() {
         &token_id
     );
 
+    // Step D: Contributor deposits into the project
     vault_client.deposit(&contributor, &project_id, &3000i128);
 
-    // 7. Assertions
+    // 7. VERIFICATION (State Assertions)
+    // Contributor should have 7,000 left (10,000 - 3,000)
     assert_eq!(token_client.balance(&contributor), 7000i128);
+    // Vault project should have 3,000
     assert_eq!(vault_client.get_balance(&project_id), 3000i128);
 
-    // Milestone & Withdrawal
+    // 8. WITHDRAWAL FLOW
+    // Admin must approve the milestone before withdrawal is possible
     vault_client.approve_milestone(&admin, &project_id);
+    
+    // Project owner withdraws 2,000 tokens
     vault_client.withdraw(&project_id, &2000i128);
 
+    // Project owner should now have 2,000 tokens in their wallet
     assert_eq!(token_client.balance(&project_owner), 2000i128);
     
-    std::println!("✅ Integration Test Passed!");
+    std::println!("🚀 CI-Ready Integration Test Passed Successfully!");
 }
+
