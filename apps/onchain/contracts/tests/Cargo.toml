@@ -9,6 +9,6 @@ crate-type = ["lib"]
 [dependencies]
 soroban-sdk = { version = "23", features = ["testutils"] }
 
-lumen_token = { path = "../lumen_token" }
-contributor_registry = { path = "../contributor_registry" }
-crowdfund_vault = { path = "../crowdfund_vault" }
+lumen_token = { path = "../lumen_token", features = ["testutils"] }
+contributor_registry = { path = "../contributor_registry", features = ["testutils"] }
+crowdfund_vault = { path = "../crowdfund_vault", features = ["testutils"] }
