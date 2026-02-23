@@ -55,7 +55,7 @@ import { SnapshotsModule } from './snapshot/snapshot.module';
     PortfolioModule,
     SnapshotsModule,
     ScheduleModule.forRoot(),
-    SnapshotsModule, 
+    SnapshotsModule,
   ],
   controllers: [AppController, TestController, TestExceptionController],
   providers: [

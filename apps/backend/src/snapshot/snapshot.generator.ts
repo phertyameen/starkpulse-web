@@ -25,7 +25,9 @@ export class SnapshotGenerator {
     const aggregations = await this.snapshotRepo.aggregateForDate(utcDate);
 
     if (aggregations.length === 0) {
-      this.logger.warn(`No signal data found for ${this.fmt(utcDate)} — skipping write`);
+      this.logger.warn(
+        `No signal data found for ${this.fmt(utcDate)} — skipping write`,
+      );
       return {
         date: utcDate,
         assetRowsWritten: 0,
@@ -37,7 +39,10 @@ export class SnapshotGenerator {
     const globalRow = aggregations.find((a) => a.assetSymbol === null);
     const assetRows = aggregations.filter((a) => a.assetSymbol !== null);
 
-    const written = await this.snapshotRepo.upsertSnapshots(utcDate, aggregations);
+    const written = await this.snapshotRepo.upsertSnapshots(
+      utcDate,
+      aggregations,
+    );
 
     const result: SnapshotRunResult = {
       date: utcDate,

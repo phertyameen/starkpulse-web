@@ -22,6 +22,6 @@ import { SnapshotGenerator } from './snapshot.generator';
 @Module({
   imports: [TypeOrmModule.forFeature([DailySnapshot])],
   providers: [SnapshotRepository, SnapshotGenerator, SnapshotScheduler],
-  exports: [SnapshotGenerator]
+  exports: [SnapshotGenerator],
 })
 export class SnapshotsModule {}

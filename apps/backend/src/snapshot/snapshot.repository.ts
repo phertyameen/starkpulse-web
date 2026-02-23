@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { DailySnapshot } from './entities/daily-snapshot.entity';
@@ -6,8 +6,6 @@ import { AssetAggregation, AssetAggregationRow } from './dto/snapshot.dto';
 
 @Injectable()
 export class SnapshotRepository {
-//   private readonly logger = new Logger(SnapshotRepository.name);
-
   constructor(
     @InjectRepository(DailySnapshot)
     private readonly repo: Repository<DailySnapshot>,
@@ -142,7 +140,7 @@ export class SnapshotRepository {
     return d.toISOString().split('T')[0]; // 'YYYY-MM-DD'
   }
 
-  private parseRow(row: AssetAggregationRow): AssetAggregation {
+  private parseRow(this: void, row: AssetAggregationRow): AssetAggregation {
     const nullableFloat = (v: string | null) =>
       v === null || v === '' ? null : parseFloat(v);
 

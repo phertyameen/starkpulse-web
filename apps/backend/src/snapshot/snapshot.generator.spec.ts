@@ -49,7 +49,11 @@ describe('SnapshotGenerator', () => {
 
   describe('generateForDate', () => {
     it('aggregates and upserts per-asset and global rows', async () => {
-      const aggs = [makeAggregation(), makeAggregation({ assetSymbol: 'ETH' }), globalAggregation()];
+      const aggs = [
+        makeAggregation(),
+        makeAggregation({ assetSymbol: 'ETH' }),
+        globalAggregation(),
+      ];
       repo.aggregateForDate.mockResolvedValue(aggs);
       repo.upsertSnapshots.mockResolvedValue(3);
 
@@ -109,7 +113,9 @@ describe('SnapshotGenerator', () => {
     it('propagates repository errors', async () => {
       repo.aggregateForDate.mockRejectedValue(new Error('db connection lost'));
 
-      await expect(generator.generateForDate(TODAY)).rejects.toThrow('db connection lost');
+      await expect(generator.generateForDate(TODAY)).rejects.toThrow(
+        'db connection lost',
+      );
       expect(repo.upsertSnapshots).not.toHaveBeenCalled();
     });
   });
@@ -167,7 +173,9 @@ describe('SnapshotGenerator', () => {
     });
 
     it('accumulates results from each day', async () => {
-      repo.aggregateForDate.mockResolvedValueOnce([makeAggregation()]).mockResolvedValueOnce([]);
+      repo.aggregateForDate
+        .mockResolvedValueOnce([makeAggregation()])
+        .mockResolvedValueOnce([]);
       repo.upsertSnapshots.mockResolvedValue(1);
 
       const from = new Date('2024-06-01T00:00:00.000Z');
@@ -191,7 +199,8 @@ describe('SnapshotGenerator', () => {
 
       await generator.generateForDate(TODAY);
 
-      const upsertArg: AssetAggregation[] = repo.upsertSnapshots.mock.calls[0][1];
+      const upsertArg: AssetAggregation[] =
+        repo.upsertSnapshots.mock.calls[0][1];
       expect(upsertArg[0].totalVolume).toBeNull();
       expect(upsertArg[0].volumeWeightedSentiment).toBeNull();
     });
@@ -206,7 +215,8 @@ describe('SnapshotGenerator', () => {
 
       await generator.generateForDate(TODAY);
 
-      const upsertArg: AssetAggregation[] = repo.upsertSnapshots.mock.calls[0][1];
+      const upsertArg: AssetAggregation[] =
+        repo.upsertSnapshots.mock.calls[0][1];
       expect(upsertArg[0].volumeWeightedSentiment).toBe(0.72);
     });
 
